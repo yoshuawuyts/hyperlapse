@@ -1,0 +1,33 @@
+{
+  "name": "hyperlapse",
+  "version": "1.0.0",
+  "description": "Distributed process manager",
+  "main": "index.js",
+  "scripts": {
+    "deps": "dependency-check . && dependency-check . --extra --no-dev",
+    "test": "standard && npm run deps && NODE_ENV=test node test",
+    "test:cov": "standard && npm run deps && NODE_ENV=test istanbul cover test.js"
+  },
+  "repository": "yoshuawuyts/hyperlapse",
+  "keywords": [
+    "process",
+    "manager",
+    "hypercore"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "hypercore": "^4.15.1",
+    "normcore": "^1.0.4",
+    "psy": "^1.7.2",
+    "pump": "^1.0.1",
+    "readable-stream": "^2.2.2",
+    "split2": "^2.1.0",
+    "through2": "^2.0.3"
+  },
+  "devDependencies": {
+    "dependency-check": "^2.6.0",
+    "istanbul": "^0.4.5",
+    "standard": "^8.6.0",
+    "tape": "^4.6.3"
+  }
+}
