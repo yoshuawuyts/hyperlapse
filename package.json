@@ -1,6 +1,6 @@
 {
   "name": "hyperlapse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Distributed process manager",
   "main": "index.js",
   "scripts": {
