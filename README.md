@@ -69,7 +69,7 @@ Start a new process on the machine.
 Stop a process on the machine
 ```json
 {
-  type: "stop",
+  "type": "stop",
   "name": "my-cool-process"
 }
 ```
@@ -78,7 +78,7 @@ Stop a process on the machine
 Restart a process on the machine
 ```json
 {
-  type: "restart",
+  "type": "restart",
   "name": "my-cool-process"
 }
 ```
@@ -87,7 +87,7 @@ Restart a process on the machine
 Remove a process on the machine
 ```json
 {
-  type: "remove",
+  "type": "remove",
   "name": "my-cool-process"
 }
 ```
