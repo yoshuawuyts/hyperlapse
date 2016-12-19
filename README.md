@@ -65,6 +65,33 @@ Start a new process on the machine.
 }
 ```
 
+### Stop
+Stop a process on the machine
+```json
+{
+  type: "stop",
+  "name": "my-cool-process"
+}
+```
+
+### Restart
+Restart a process on the machine
+```json
+{
+  type: "restart",
+  "name": "my-cool-process"
+}
+```
+
+### Remove
+Remove a process on the machine
+```json
+{
+  type: "remove",
+  "name": "my-cool-process"
+}
+```
+
 ## API
 ### agent = hyperlapse(inFeed, outFeed)
 Create a new agent that tails a `hypercore`. Reads commands from the `inFeed`
