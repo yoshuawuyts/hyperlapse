@@ -32,7 +32,7 @@ var hyperlapse = require('hyperlapse')
 var normcore = require('normcore')
 
 // the command feed usually lives remotely
-var commandFeed = normCore('command-feed')
+var commandFeed = normcore('command-feed')
 var commandKey = commandFeed.key.toString('hex')
 
 var inFeed = normcore(commandKey)

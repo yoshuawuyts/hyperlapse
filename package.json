@@ -18,7 +18,7 @@
   "dependencies": {
     "hypercore": "^4.15.1",
     "normcore": "^1.0.4",
-    "psy": "^1.7.2",
+    "psy": "^1.7.3",
     "pump": "^1.0.1",
     "readable-stream": "^2.2.2",
     "split2": "^2.1.0",
