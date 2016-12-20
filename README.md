@@ -22,7 +22,7 @@ Distributed process manager. Listens on a [hypercore][hypercore] feed for
   Options:
     -h, --help       Print usage
     -v, --version    Print version
-    -n, --name       Give a service a name when running "append start"
+    -n, --name       Provide an explicit name when starting a service
     -k, --key        Pass a hypercore directory, assumes cwd if not passed
 
   Examples:
