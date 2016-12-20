@@ -11,7 +11,7 @@ hyperlapse(inFeed, outFeed)
 
 outFeed.createReadStream().pipe(process.stdout)
 var outKey = outFeed.key.toString('hex')
-console.log('outFeed key is ' + outKey)
+console.info(outKey)
 
 commandFeed.append(JSON.stringify({
   type: 'start',

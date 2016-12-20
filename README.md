@@ -2,8 +2,8 @@
 [![npm version][2]][3] [![build status][4]][5] [![test coverage][6]][7]
 [![downloads][8]][9] [![js-standard-style][10]][11]
 
-Distributed process manager. Listens on a [hypercore][hypercore] feed for JSON
-commands to execute on the host machine using [psy][psy].
+Distributed process manager. Listens on a [hypercore][hypercore] feed for
+[ndjson][ndjson] commands to execute on the host machine using [psy][psy].
 
 ## CLI API
 ```txt
@@ -11,19 +11,27 @@ commands to execute on the host machine using [psy][psy].
     $ hyperlapse <command> [options]
 
   Commands:
-    listen <hypercore key>             Listen for commands and print a log key
-    append <hypercore key> <command>   Append commands onto a feed
-    list   <hypercore key>             Print the services on a machine
-
-  Process commands:
-    start <package-name@version>   Boot up a service on the host machine
-    stop
-    remove
-    restart
+    init                            Create a new hypercore in the current dir
+    listen <hypercore-public-key>   Listen for commands and print a log key
+    start <package-name@version>    Start a service on the host machine
+    stop <name>                     Stop a service on the host machine
+    remove <name>                   Remove a service on the host machine
+    restart <name>                  Restart a service on the host machine
+    list                            List all services on the host machine
 
   Options:
-    -h, --help              Print usage
-    -v, --version           Print version
+    -h, --help       Print usage
+    -v, --version    Print version
+    -n, --name       Give a service a name when running "append start"
+    -k, --key        Pass a hypercore directory, assumes cwd if not passed
+
+  Examples:
+    $ hyperlapse init
+    $ hyperlapse listen <64 bit hypercore public key>
+    $ hyperlapse start \
+      hypercore-archiver-bot@^1.0.0 -n hypercore-archiver-bot \
+      -- hypercore-archiver-bot --channel=#dat --port=8080
+    $ hyperlapse list
 ```
 
 ## JS API
@@ -31,11 +39,7 @@ commands to execute on the host machine using [psy][psy].
 var hyperlapse = require('hyperlapse')
 var normcore = require('normcore')
 
-// the command feed usually lives remotely
-var commandFeed = normcore('command-feed')
-var commandKey = commandFeed.key.toString('hex')
-
-var inFeed = normcore(commandKey)
+var inFeed = normcore('in-feed')
 var outFeed = normcore('out-feed')
 hyperlapse(inFeed, outFeed)
 
@@ -43,7 +47,7 @@ outFeed.createReadStream().pipe(process.stdout)
 var outKey = outFeed.key.toString('hex')
 console.log('outFeed key is ' + outKey)
 
-commandFeed.append(JSON.stringify({
+inFeed.append(JSON.stringify({
   type: 'start',
   name: 'hypercore-archiver-bot',
   source: 'hypercore-archiver-bot@1.1.3',
@@ -52,6 +56,8 @@ commandFeed.append(JSON.stringify({
 ```
 
 ## Process commands
+Each command should be valid [newline delimited json][ndjson].
+
 ### Start
 Start a new process on the machine.
 ```json
@@ -92,8 +98,16 @@ Remove a process on the machine
 }
 ```
 
+### List
+List all processes on the machine
+```json
+{
+  "type": "list"
+}
+```
+
 ## API
-### agent = hyperlapse(inFeed, outFeed)
+### hyperlapse(inFeed, outFeed)
 Create a new agent that tails a `hypercore`. Reads commands from the `inFeed`
 and logs its output to the `outFeed`.
 
@@ -124,3 +138,4 @@ $ npm install hyperlapse
 
 [hypercore]: https://github.com/mafintosh/hypercore
 [psy]: https://github.com/substack/psy
+[ndjson]: http://ndjson.org/
