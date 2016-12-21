@@ -19,11 +19,13 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "end-of-stream": "^1.1.0",
     "explain-error": "^1.0.3",
     "hypercore": "^4.15.1",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "normcore": "^1.1.0",
+    "npm-install-package": "^1.1.0",
     "psy": "^1.7.3",
     "pump": "^1.0.1",
     "readable-stream": "^2.2.2",

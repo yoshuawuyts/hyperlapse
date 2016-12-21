@@ -3,6 +3,8 @@
 var explain = require('explain-error')
 var minimist = require('minimist')
 var normcore = require('normcore')
+var eos = require('end-of-stream')
+var crypto = require('crypto')
 var mkdirp = require('mkdirp')
 
 var hyperlapse = require('./')
@@ -64,7 +66,7 @@ function main (argv) {
       process.exit()
     })
   } else if (cmd === 'listen') {
-    var key = argv._[0]
+    var key = argv._.shift()
     if (!key) {
       console.error('hyperlapse.listen: key should be passed in as an argument')
       process.exit(1)
@@ -74,9 +76,56 @@ function main (argv) {
       process.exit()
     })
   } else if (cmd === 'start') {
+    var source = argv._.shift()
+    if (!source) {
+      console.error('hyperlapse.start: source should be passed in as the first argument')
+      process.exit(1)
+    }
+
+    var _cmd = argv._.concat(' ')
+    if (!_cmd) {
+      console.error('hyperlapse.start: a command should be passed in')
+      process.exit(1)
+    }
+
+    var name = (argv.name)
+      ? argv.name
+      : crypto.randomBytes(4).toString('hex')
+
+    start(source, name, _cmd, function (err) {
+      if (err) throw explain(err, 'hyperlapse: error running start')
+      process.exit()
+    })
   } else if (cmd === 'stop') {
+    var stopName = argv.name || argv._.shift()
+    if (!stopName) {
+      console.error('hyperlapse.remove: a process name should be passed')
+      process.exit(1)
+    }
+    crud('stop', stopName, function (err) {
+      if (err) throw explain(err, 'hyperlapse: error running stop')
+      process.exit()
+    })
   } else if (cmd === 'remove') {
+    var removeName = argv.name || argv._.shift()
+    if (!removeName) {
+      console.error('hyperlapse.remove: a process name should be passed')
+      process.exit(1)
+    }
+    crud('remove', removeName, function (err) {
+      if (err) throw explain(err, 'hyperlapse: error running remove')
+      process.exit()
+    })
   } else if (cmd === 'restart') {
+    var restartName = argv.name || argv._.shift()
+    if (!restartName) {
+      console.error('hyperlapse.restart: a process name should be passed')
+      process.exit(1)
+    }
+    crud('restart', restartName, function (err) {
+      if (err) throw explain(err, 'hyperlapse: error runningrestart')
+      process.exit()
+    })
   } else if (cmd === 'list') {
   } else {
     console.error(usage)
@@ -97,4 +146,30 @@ function listen (key, cb) {
   var inFeed = normcore(key)
   var outFeed = normcore('hyperlapse-out-' + key)
   hyperlapse(inFeed, outFeed)
+}
+
+function start (name, source, cb) {
+  var msg = JSON.stringify({
+    'type': 'start',
+    'name': name,
+    'source': source
+  }) + '\n'
+
+  var feed = normcore(process.cwd())
+  var readStream = feed.createReadStream()
+  readStream.end(msg)
+  eos(readStream, cb)
+}
+
+function crud (type, name, source, cb) {
+  var msg = JSON.stringify({
+    'type': type,
+    'name': name,
+    'source': source
+  }) + '\n'
+
+  var feed = normcore(process.cwd())
+  var readStream = feed.createReadStream()
+  readStream.end(msg)
+  eos(readStream, cb)
 }
