@@ -1,3 +1,5 @@
+var install = require('npm-install-package')
+var explain = require('explain-error')
 var through = require('through2')
 var assert = require('assert')
 var split = require('split2')
@@ -46,9 +48,16 @@ function Hyperlapse (inFeed, outFeed) {
 }
 
 Hyperlapse.prototype._start = function (cmd, cb) {
+  var self = this
+
   var command = cmd.command
+  var source = cmd.source
   var opts = { name: cmd.name }
-  this.psy.start(command, opts, cb)
+
+  install(source, { cache: true }, function (err) {
+    if (err) return cb(explain(err, 'hyperlapse.start: error running npm install'))
+    self.psy.start(command, opts, cb)
+  })
 }
 
 Hyperlapse.prototype._stop = function (cmd, cb) {

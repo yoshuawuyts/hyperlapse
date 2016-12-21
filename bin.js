@@ -156,9 +156,9 @@ function start (name, source, cb) {
   }) + '\n'
 
   var feed = normcore(process.cwd())
-  var readStream = feed.createReadStream()
-  readStream.end(msg)
-  eos(readStream, cb)
+  var writeStream = feed.createWriteStream()
+  writeStream.end(msg)
+  eos(writeStream, cb)
 }
 
 function crud (type, name, source, cb) {
@@ -169,7 +169,7 @@ function crud (type, name, source, cb) {
   }) + '\n'
 
   var feed = normcore(process.cwd())
-  var readStream = feed.createReadStream()
-  readStream.end(msg)
-  eos(readStream, cb)
+  var writeStream = feed.createWriteStream()
+  writeStream.end(msg)
+  eos(writeStream, cb)
 }
