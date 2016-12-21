@@ -6,14 +6,18 @@ var normcore = require('normcore')
 var eos = require('end-of-stream')
 var crypto = require('crypto')
 var mkdirp = require('mkdirp')
+var path = require('path')
+var fs = require('fs')
 
 var hyperlapse = require('./')
 
 var argv = minimist(process.argv.slice(2), {
   boolean: [ 'help', 'version' ],
+  string: [ 'name' ],
   alias: {
     h: 'help',
-    v: 'version'
+    v: 'version',
+    n: 'name'
   }
 })
 
@@ -148,28 +152,42 @@ function listen (key, cb) {
   hyperlapse(inFeed, outFeed)
 }
 
-function start (name, source, cb) {
+function start (name, source, command, cb) {
   var msg = JSON.stringify({
-    'type': 'start',
-    'name': name,
-    'source': source
+    type: 'start',
+    name: name,
+    source: source,
+    command: command
   }) + '\n'
 
-  var feed = normcore(process.cwd())
-  var writeStream = feed.createWriteStream()
-  writeStream.end(msg)
-  eos(writeStream, cb)
+  validateRepo(function (err) {
+    if (err) return cb(err)
+    var feed = normcore(process.cwd())
+    var writeStream = feed.createWriteStream()
+    writeStream.end(msg)
+    eos(writeStream, cb)
+  })
 }
 
 function crud (type, name, source, cb) {
   var msg = JSON.stringify({
-    'type': type,
-    'name': name,
-    'source': source
+    type: type,
+    name: name,
+    source: source
   }) + '\n'
 
-  var feed = normcore(process.cwd())
-  var writeStream = feed.createWriteStream()
-  writeStream.end(msg)
-  eos(writeStream, cb)
+  validateRepo(function (err) {
+    if (err) return cb(err)
+    var feed = normcore(process.cwd())
+    var writeStream = feed.createWriteStream()
+    writeStream.end(msg)
+    eos(writeStream, cb)
+  })
+}
+
+function validateRepo (done) {
+  fs.stat(path.join(process.cwd(), 'SECRET_KEY'), function (err) {
+    if (err) return done(new Error('no hypercore with write access found in the current directory - run `hyperlapse init` first'))
+    done()
+  })
 }
