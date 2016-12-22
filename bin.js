@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+var hyperhealth = require('hyperhealth')
 var explain = require('explain-error')
 var minimist = require('minimist')
 var normcore = require('normcore')
@@ -80,7 +81,7 @@ function main (argv) {
       process.exit(1)
     }
 
-    var _cmd = argv._.concat(' ')
+    var _cmd = argv._.join(' ')
     if (!_cmd) {
       console.error('hyperlapse.start: a command should be passed in')
       process.exit(1)
@@ -137,7 +138,7 @@ function listen (key) {
   console.info(outKey)
 }
 
-function start (name, source, command) {
+function start (source, name, command) {
   var msg = JSON.stringify({
     type: 'start',
     name: name,
@@ -149,10 +150,26 @@ function start (name, source, command) {
     if (err) throw explain(err, 'hyperlapse.start: error validating repo')
     var feed = normcore(process.cwd())
     var writeStream = feed.createWriteStream()
+
     writeStream.end(msg)
     eos(writeStream, function (err) {
       if (err) throw explain(err, 'hyperlapse.start: stream error')
     })
+    eof(feed, function (err) {
+      if (err) throw explain(err, 'hyperlapse.start: feed error')
+      process.exit()
+    })
+
+    var health = hyperhealth(feed)
+
+    setTimeout(function () {
+      var data = health.get()
+      if (!data || !data.peers || !data.peers.length) return
+      console.log(data.peers.length, 'total peers')
+      console.log(data.bytes, 'total bytes')
+      console.log(data.blocks, 'total blocks')
+      console.log('Peer 1 Downloaded ' + (data.peers[0].have / data.peers[0].blocks) * 100 + '%')
+    }, 1000)
   })
 }
 
@@ -179,4 +196,28 @@ function validateRepo (done) {
     if (err) return done(new Error('no hypercore with write access found in the current directory - run `hyperlapse init` first'))
     done()
   })
+}
+
+function eof (feed, cb) {
+  var health = hyperhealth(feed)
+
+  feed.on('upload', listen)
+  process.nextTick(listen)
+
+  function listen () {
+    var data = health.get()
+    if (!data || !data.peers || !data.peers.length) return
+
+    var peerCount = data.peers.length
+    var peersDone = 0
+
+    for (var i = 0; i < peerCount; i++) {
+      if (data.peers[i].have === data.peers[0].blocks) peersDone++
+    }
+
+    if (peersDone === peerCount) {
+      feed.removeListener('upload', listen)
+      cb()
+    }
+  }
 }

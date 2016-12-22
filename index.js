@@ -3,6 +3,7 @@ var explain = require('explain-error')
 var through = require('through2')
 var assert = require('assert')
 var split = require('split2')
+var pino = require('pino')
 var pump = require('pump')
 var psy = require('psy')
 
@@ -28,12 +29,13 @@ function Hyperlapse (inFeed, outFeed) {
     self.outStream = outFeed.createWriteStream()
     self.inStream = inFeed.createReadStream(inOpts)
     self.psy = psy()
+    self.pino = pino(self.outStream)
 
     var sink = through(function (data, enc, done) {
       try {
         var json = JSON.parse(data)
       } catch (err) {
-        return self._error(err.message)
+        return self._error(err)
       }
 
       if (json.type === 'start') return self.start(json, end)
@@ -43,9 +45,7 @@ function Hyperlapse (inFeed, outFeed) {
       return self._error('hyperlapse: cannot parse command type ' + json.type)
 
       function end (err) {
-        if (err && err.info) self._error(err.info)
-        else if (err && err.message) self._error(err.message)
-        else if (err) self._error(err)
+        if (err) return self._error(err)
         done()
       }
     })
@@ -61,17 +61,36 @@ Hyperlapse.prototype.start = function (cmd, cb) {
 
   var command = cmd.command
   var source = cmd.source
-  var opts = { name: cmd.name }
 
-  this._log({ type: 'install-start', source: source })
-  install(source, { cache: true, silent: true }, function (err) {
+  this._log({
+    breakpoint: 'install-start',
+    source: source
+  })
+
+  var installOpts = { cache: true, global: true }
+  install(source, installOpts, function (err) {
     if (err) return cb(explain(err, 'hyperlapse.start: error running npm install'))
-    this._log({ type: 'install-end', source: source })
 
-    this._log({ type: 'run-start', source: source })
+    self._log({
+      breakpoint: 'install-end',
+      source: source
+    })
+
+    var opts = { name: cmd.name }
+
+    self._log({
+      breakpoint: 'run-start',
+      source: source,
+      command: command,
+      opts: opts
+    })
+
     self.psy.start(command, opts, function (err) {
       if (err) return cb(explain(err, 'hyperlapse.start: error starting ' + source))
-      this._log({ type: 'run-ok', source: source })
+      self._log({
+        breakpoint: 'run-ok',
+        source: source
+      })
     })
   })
 }
@@ -92,11 +111,9 @@ Hyperlapse.prototype.remove = function (cmd, cb) {
 }
 
 Hyperlapse.prototype._error = function (err) {
-  err = JSON.stringify({ type: 'error', message: err }) + '\n'
-  this.outStream.write(err)
+  this.pino.error(err)
 }
 
 Hyperlapse.prototype._log = function (msg) {
-  msg = JSON.stringify(msg) + '\n'
-  this.outStream.write(msg)
+  this.pino.info(msg)
 }
