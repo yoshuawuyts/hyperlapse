@@ -17,33 +17,42 @@ function Hyperlapse (inFeed, outFeed) {
 
   var self = this
 
-  this.outStream = outFeed.createWriteStream()
-  this.inStream = inFeed.createReadStream()
-  this.psy = psy()
+  inFeed.open(function (err) {
+    if (err) throw err // TODO find a better way to handle this
 
-  var sink = through(function (data, enc, done) {
-    try {
-      var json = JSON.parse(data)
-    } catch (err) {
-      return self._error(err.message)
+    var inOpts = {
+      live: true,
+      start: inFeed.blocks
     }
 
-    if (json.type === 'start') return self.start(json, end)
-    if (json.type === 'stop') return self.stop(json, end)
-    if (json.type === 'restart') return self.restart(json, end)
-    if (json.type === 'remove') return self.remove(json, end)
-    return self._error('hyperlapse: cannot parse command type ' + json.type)
+    self.outStream = outFeed.createWriteStream()
+    self.inStream = inFeed.createReadStream(inOpts)
+    self.psy = psy()
 
-    function end (err) {
-      if (err && err.info) self._error(err.info)
-      else if (err && err.message) self._error(err.message)
-      else if (err) self._error(err)
-      done()
-    }
-  })
+    var sink = through(function (data, enc, done) {
+      try {
+        var json = JSON.parse(data)
+      } catch (err) {
+        return self._error(err.message)
+      }
 
-  pump(self.inStream, split(), sink, function (err) {
-    if (err) return self._error(err)
+      if (json.type === 'start') return self.start(json, end)
+      if (json.type === 'stop') return self.stop(json, end)
+      if (json.type === 'restart') return self.restart(json, end)
+      if (json.type === 'remove') return self.remove(json, end)
+      return self._error('hyperlapse: cannot parse command type ' + json.type)
+
+      function end (err) {
+        if (err && err.info) self._error(err.info)
+        else if (err && err.message) self._error(err.message)
+        else if (err) self._error(err)
+        done()
+      }
+    })
+
+    pump(self.inStream, split(), sink, function (err) {
+      if (err) return self._error(err)
+    })
   })
 }
 
@@ -54,10 +63,16 @@ Hyperlapse.prototype.start = function (cmd, cb) {
   var source = cmd.source
   var opts = { name: cmd.name }
 
-  this._log({ type: 'install', source: source })
-  install(source, { cache: true }, function (err) {
+  this._log({ type: 'install-start', source: source })
+  install(source, { cache: true, silent: true }, function (err) {
     if (err) return cb(explain(err, 'hyperlapse.start: error running npm install'))
-    self.psy.start(command, opts, cb)
+    this._log({ type: 'install-end', source: source })
+
+    this._log({ type: 'run-start', source: source })
+    self.psy.start(command, opts, function (err) {
+      if (err) return cb(explain(err, 'hyperlapse.start: error starting ' + source))
+      this._log({ type: 'run-ok', source: source })
+    })
   })
 }
 

@@ -119,27 +119,25 @@ function main (argv) {
   }
 }
 
-function init (argv, cb) {
+function init (argv) {
   var loc = argv._[0] || process.cwd()
   mkdirp(loc, function (err) {
     if (err) throw explain(err, 'hyperlapse.init: error creating dir')
     var feed = normcore(loc)
     console.info(feed.key.toString('hex'))
-    cb()
   })
 }
 
-function listen (key, cb) {
+function listen (key) {
   var inFeed = normcore(key)
   var outFeed = normcore('hyperlapse-out-' + key)
   hyperlapse(inFeed, outFeed)
 
   var outKey = outFeed.key.toString('hex')
   console.info(outKey)
-  cb()
 }
 
-function start (name, source, command, cb) {
+function start (name, source, command) {
   var msg = JSON.stringify({
     type: 'start',
     name: name,
@@ -149,7 +147,6 @@ function start (name, source, command, cb) {
 
   validateRepo(function (err) {
     if (err) throw explain(err, 'hyperlapse.start: error validating repo')
-    if (err) return cb(err)
     var feed = normcore(process.cwd())
     var writeStream = feed.createWriteStream()
     writeStream.end(msg)
@@ -159,7 +156,7 @@ function start (name, source, command, cb) {
   })
 }
 
-function crud (type, name, source, cb) {
+function crud (type, name, source) {
   var msg = JSON.stringify({
     type: type,
     name: name,
