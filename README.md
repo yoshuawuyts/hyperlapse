@@ -65,6 +65,7 @@ Start a new process on the machine.
   "type": "start",
   "name": "what the process should be named on the machine",
   "source": "e.g. my-cool-service-on-npm@3.4.7",
+  "command": "/my/cool/service",
   "env": {
     "a bunch": "of env vars"
   }
