@@ -28,10 +28,10 @@ function Hyperlapse (inFeed, outFeed) {
       return self._error(err.message)
     }
 
-    if (json.type === 'start') return self._start(json, end)
-    if (json.type === 'stop') return self._stop(json, end)
-    if (json.type === 'restart') return self._restart(json, end)
-    if (json.type === 'remove') return self._remove(json, end)
+    if (json.type === 'start') return self.start(json, end)
+    if (json.type === 'stop') return self.stop(json, end)
+    if (json.type === 'restart') return self.restart(json, end)
+    if (json.type === 'remove') return self.remove(json, end)
     return self._error('hyperlapse: cannot parse command type ' + json.type)
 
     function end (err) {
@@ -47,30 +47,31 @@ function Hyperlapse (inFeed, outFeed) {
   })
 }
 
-Hyperlapse.prototype._start = function (cmd, cb) {
+Hyperlapse.prototype.start = function (cmd, cb) {
   var self = this
 
   var command = cmd.command
   var source = cmd.source
   var opts = { name: cmd.name }
 
+  this._log({ type: 'install', source: source })
   install(source, { cache: true }, function (err) {
     if (err) return cb(explain(err, 'hyperlapse.start: error running npm install'))
     self.psy.start(command, opts, cb)
   })
 }
 
-Hyperlapse.prototype._stop = function (cmd, cb) {
+Hyperlapse.prototype.stop = function (cmd, cb) {
   var name = cmd.name
   this.psy.stop(name, cb)
 }
 
-Hyperlapse.prototype._restart = function (cmd, cb) {
+Hyperlapse.prototype.restart = function (cmd, cb) {
   var name = cmd.name
   this.psy.restart(name, cb)
 }
 
-Hyperlapse.prototype._remove = function (cmd, cb) {
+Hyperlapse.prototype.remove = function (cmd, cb) {
   var name = cmd.name
   this.psy.remove(name, cb)
 }
@@ -78,4 +79,9 @@ Hyperlapse.prototype._remove = function (cmd, cb) {
 Hyperlapse.prototype._error = function (err) {
   err = JSON.stringify({ type: 'error', message: err }) + '\n'
   this.outStream.write(err)
+}
+
+Hyperlapse.prototype._log = function (msg) {
+  msg = JSON.stringify(msg) + '\n'
+  this.outStream.write(msg)
 }

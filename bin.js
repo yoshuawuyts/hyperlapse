@@ -65,20 +65,14 @@ function main (argv) {
   }
 
   if (cmd === 'init') {
-    init(argv, function (err) {
-      if (err) throw explain(err, 'hyperlapse: error running init')
-      process.exit()
-    })
+    init(argv)
   } else if (cmd === 'listen') {
     var key = argv._.shift()
     if (!key) {
       console.error('hyperlapse.listen: key should be passed in as an argument')
       process.exit(1)
     }
-    listen(key, function (err) {
-      if (err) throw explain(err, 'hyperlapse: error running listen')
-      process.exit()
-    })
+    listen(key)
   } else if (cmd === 'start') {
     var source = argv._.shift()
     if (!source) {
@@ -96,40 +90,28 @@ function main (argv) {
       ? argv.name
       : crypto.randomBytes(4).toString('hex')
 
-    start(source, name, _cmd, function (err) {
-      if (err) throw explain(err, 'hyperlapse: error running start')
-      process.exit()
-    })
+    start(source, name, _cmd)
   } else if (cmd === 'stop') {
     var stopName = argv.name || argv._.shift()
     if (!stopName) {
       console.error('hyperlapse.remove: a process name should be passed')
       process.exit(1)
     }
-    crud('stop', stopName, function (err) {
-      if (err) throw explain(err, 'hyperlapse: error running stop')
-      process.exit()
-    })
+    crud('stop', stopName)
   } else if (cmd === 'remove') {
     var removeName = argv.name || argv._.shift()
     if (!removeName) {
       console.error('hyperlapse.remove: a process name should be passed')
       process.exit(1)
     }
-    crud('remove', removeName, function (err) {
-      if (err) throw explain(err, 'hyperlapse: error running remove')
-      process.exit()
-    })
+    crud('remove', removeName)
   } else if (cmd === 'restart') {
     var restartName = argv.name || argv._.shift()
     if (!restartName) {
       console.error('hyperlapse.restart: a process name should be passed')
       process.exit(1)
     }
-    crud('restart', restartName, function (err) {
-      if (err) throw explain(err, 'hyperlapse: error runningrestart')
-      process.exit()
-    })
+    crud('restart', restartName)
   } else if (cmd === 'list') {
   } else {
     console.error(usage)
@@ -140,8 +122,9 @@ function main (argv) {
 function init (argv, cb) {
   var loc = argv._[0] || process.cwd()
   mkdirp(loc, function (err) {
-    if (err) return cb(err)
-    normcore(loc)
+    if (err) throw explain(err, 'hyperlapse.init: error creating dir')
+    var feed = normcore(loc)
+    console.info(feed.key.toString('hex'))
     cb()
   })
 }
@@ -150,6 +133,10 @@ function listen (key, cb) {
   var inFeed = normcore(key)
   var outFeed = normcore('hyperlapse-out-' + key)
   hyperlapse(inFeed, outFeed)
+
+  var outKey = outFeed.key.toString('hex')
+  console.info(outKey)
+  cb()
 }
 
 function start (name, source, command, cb) {
@@ -161,11 +148,14 @@ function start (name, source, command, cb) {
   }) + '\n'
 
   validateRepo(function (err) {
+    if (err) throw explain(err, 'hyperlapse.start: error validating repo')
     if (err) return cb(err)
     var feed = normcore(process.cwd())
     var writeStream = feed.createWriteStream()
     writeStream.end(msg)
-    eos(writeStream, cb)
+    eos(writeStream, function (err) {
+      if (err) throw explain(err, 'hyperlapse.start: stream error')
+    })
   })
 }
 
@@ -177,11 +167,13 @@ function crud (type, name, source, cb) {
   }) + '\n'
 
   validateRepo(function (err) {
-    if (err) return cb(err)
+    if (err) throw explain(err, 'hyperlapse.' + type + ': error validating repo')
     var feed = normcore(process.cwd())
     var writeStream = feed.createWriteStream()
     writeStream.end(msg)
-    eos(writeStream, cb)
+    eos(writeStream, function (err) {
+      if (err) throw explain(err, 'hyperlapse.' + type + ': stream error')
+    })
   })
 }
 
